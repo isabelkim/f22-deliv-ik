@@ -32,7 +32,7 @@ export default function EntryModal({ entry, type, user }) {
 
    // State variables for modal status
 
-   // TODO: For editing, you may have to add and manage another state variable to check if the entry is being edited.
+   // For editing, you may have to add and manage another state variable to check if the entry is being edited.
 
    const [open, setOpen] = useState(false);
    const [name, setName] = useState(entry.name);
@@ -43,9 +43,7 @@ export default function EntryModal({ entry, type, user }) {
    // Toggle between "Edit" and "Save"
    const [text, setText] = useState("Edit");
 
-
    // Modal visibility handlers
-
    const handleClickOpen = () => {
       setText("Edit");
       setOpen(true);
@@ -62,7 +60,6 @@ export default function EntryModal({ entry, type, user }) {
    };
 
    // Mutation handlers
-
    const handleAdd = () => {
       const newEntry = {
          name: name,
@@ -80,7 +77,7 @@ export default function EntryModal({ entry, type, user }) {
 
    const [click, setClick] = useState(false)
 
-   // TODO: Add Edit Mutation Handler
+   // Add Edit Mutation Handler
    const handleEdit = () => {
       if (click) {
          const updatedEntry = {
@@ -107,7 +104,7 @@ export default function EntryModal({ entry, type, user }) {
 
 
 
-   // TODO: Add Delete Mutation Handler
+   // Add Delete Mutation Handler
 
    const handleDelete = () => {
       const deletingEntry = {
@@ -150,13 +147,6 @@ export default function EntryModal({ entry, type, user }) {
    const favoritesButton =
    type === "edit" ? <Button onClick={handleSave}>{saveText}</Button>
       : null;
-   
-
-   // Link
-   // function checkLink(link) {
-   //    if (link.startsWith('https://')) return link;
-   //    return (<Alert severity="error">This is an error alert — check it out!</Alert>)
-   // }
 
    // QR Code
    const [qr, setQr] = React.useState(false);
