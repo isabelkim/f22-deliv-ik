@@ -3,6 +3,7 @@ import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
+import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
 import FormControl from '@mui/material/FormControl';
 import IconButton from '@mui/material/IconButton';
@@ -14,6 +15,9 @@ import * as React from 'react';
 import { useState } from 'react';
 import { categories } from '../utils/categories';
 import { addEntry } from '../utils/mutations';
+import { updateEntry } from '../utils/mutations';
+import { deleteEntry } from '../utils/mutations';
+import { updateFavorites } from '../utils/mutations';
 
 // Modal component for individual entries.
 
@@ -36,9 +40,14 @@ export default function EntryModal({ entry, type, user }) {
    const [description, setDescription] = useState(entry.description);
    const [category, setCategory] = React.useState(entry.category);
 
+   // Toggle between "Edit" and "Save"
+   const [text, setText] = useState("Edit");
+
+
    // Modal visibility handlers
 
    const handleClickOpen = () => {
+      setText("Edit");
       setOpen(true);
       setName(entry.name);
       setLink(entry.link);
@@ -48,6 +57,8 @@ export default function EntryModal({ entry, type, user }) {
 
    const handleClose = () => {
       setOpen(false);
+      setAlert(false)
+      setQr(false)
    };
 
    // Mutation handlers
@@ -64,11 +75,103 @@ export default function EntryModal({ entry, type, user }) {
 
       addEntry(newEntry).catch(console.error);
       handleClose();
+      setText("Edit")
    };
 
+   const [click, setClick] = useState(false)
+
    // TODO: Add Edit Mutation Handler
+   const handleEdit = () => {
+      if (click) {
+         const updatedEntry = {
+            name: name,
+            link: link,
+            description: description,
+            user: entry.user,
+            category: category,
+            userid: entry.userid,
+            id: entry.id
+         };
+   
+         updateEntry(updatedEntry).catch(console.error);
+         handleClose();
+         setClick(false)
+         setText("Edit")
+      }
+
+      else {
+         setClick(true)
+         setText("Save")
+      }
+   };
+
+
 
    // TODO: Add Delete Mutation Handler
+
+   const handleDelete = () => {
+      const deletingEntry = {
+         name: name,
+         link: link,
+         description: description,
+         user: entry.user,
+         category: category,
+         userid: entry.userid,
+         id: entry.id
+      };
+
+      deleteEntry(deletingEntry).catch(console.error);
+      handleClose();
+   };
+
+   // Alert popup
+   const [alert, setAlert] = React.useState(false);
+
+   const handleAlert = () => {
+     setAlert(true);
+   };
+
+   // Favorites
+   const [saveText, setSaveText] = useState("Favorite");
+
+   const handleSave = () => {
+      if (entry.favorites) {
+         setSaveText("Favorite");
+         entry.favorites = false
+         updateFavorites(entry).catch(console.error);
+      }
+      else {
+         setSaveText("Remove From Favorites");
+         entry.favorites = true
+         updateFavorites(entry).catch(console.error);
+      }
+   };
+
+   const favoritesButton =
+   type === "edit" ? <Button onClick={handleSave}>{saveText}</Button>
+      : null;
+   
+
+   // Link
+   // function checkLink(link) {
+   //    if (link.startsWith('https://')) return link;
+   //    return (<Alert severity="error">This is an error alert — check it out!</Alert>)
+   // }
+
+   // QR Code
+   const [qr, setQr] = React.useState(false);
+   const handleQr = () => {
+      setQr(true);
+   };
+
+   function showQR(qr) {
+      if (!qr) return (
+         <Button onClick={handleQr} autoFocus>Generate QR Code</Button>
+      );
+      return (
+         <img show={qr} src={`https://api.qrserver.com/v1/create-qr-code/?data=${link}&amp;size=300x300`} alt="QR" title="" />
+      )
+   }
 
    // Button handlers for modal opening and inside-modal actions.
    // These buttons are displayed conditionally based on if adding or editing/opening.
@@ -86,20 +189,49 @@ export default function EntryModal({ entry, type, user }) {
    const actionButtons =
       type === "edit" ?
          <DialogActions>
+            {/* Cancel button for what pops up when "Open" is pressed */}
             <Button onClick={handleClose}>Cancel</Button>
+            {/* Delete button for what pops up when "Open" is pressed */}
+            <Button onClick={handleAlert}>Delete</Button>
+            {/* Added button to edit */}
+            <Button variant="contained" onClick={handleEdit}>{text}</Button>
          </DialogActions>
          : type === "add" ?
             <DialogActions>
+               {/* Cancel button for adding entry */}
                <Button onClick={handleClose}>Cancel</Button>
+               {/* Add Entry button once you click Add Entry */}
                <Button variant="contained" onClick={handleAdd}>Add Entry</Button>
             </DialogActions>
             : null;
+         
 
    return (
       <div>
+         <div>
+            <Dialog
+            open={alert}
+            onClose={handleClose}
+            aria-labelledby="alert-dialog-title"
+            aria-describedby="alert-dialog-description"
+            >
+            <DialogContent>
+               <DialogContentText id="alert-dialog-description">
+                  Are you sure you want to delete this entry?
+               </DialogContentText>
+            </DialogContent>
+            <DialogActions>
+               <Button onClick={handleClose}>Cancel</Button>
+               <Button onClick={handleDelete} autoFocus>
+                  OK
+               </Button>
+            </DialogActions>
+            </Dialog>
+         </div>
          {openButton}
          <Dialog open={open} onClose={handleClose}>
             <DialogTitle>{type === "edit" ? name : "Add Entry"}</DialogTitle>
+            {favoritesButton}
             <DialogContent>
                {/* TODO: Feel free to change the properties of these components to implement editing functionality. The InputProps props class for these MUI components allows you to change their traditional CSS properties. */}
                <TextField
@@ -110,6 +242,7 @@ export default function EntryModal({ entry, type, user }) {
                   variant="standard"
                   value={name}
                   onChange={(event) => setName(event.target.value)}
+                  InputProps={{readOnly: ((type === "edit") && !click)}}
                />
                <TextField
                   margin="normal"
@@ -120,7 +253,15 @@ export default function EntryModal({ entry, type, user }) {
                   variant="standard"
                   value={link}
                   onChange={(event) => setLink(event.target.value)}
+                  InputProps={{readOnly: ((type === "edit") && !click)}}
                />
+               <br/>
+               {/* <Button onClick={handleQr} autoFocus>Generate QR Code
+               </Button> */}
+               {/* QR Code */}
+                  <div>
+                     { showQR(qr) }
+                  </div>
                <TextField
                   margin="normal"
                   id="description"
@@ -131,11 +272,13 @@ export default function EntryModal({ entry, type, user }) {
                   maxRows={8}
                   value={description}
                   onChange={(event) => setDescription(event.target.value)}
+                  InputProps={{readOnly: ((type === "edit") && !click)}}
                />
 
                <FormControl fullWidth sx={{ "margin-top": 20 }}>
                   <InputLabel id="demo-simple-select-label">Category</InputLabel>
                   <Select
+                     inputProps={{readOnly: ((type === "edit") && !click)}}
                      labelId="demo-simple-select-label"
                      id="demo-simple-select"
                      value={category}
@@ -148,6 +291,18 @@ export default function EntryModal({ entry, type, user }) {
             </DialogContent>
             {actionButtons}
          </Dialog>
+         {/* <Container className="mt-4">
+            <Row>
+            <Col md={{ span: 10, offset: 1 }}>
+               <Card className="mt-2">
+                  <Card.Body>
+                  {<Alert variant="success">a</Alert>}
+                  </Card.Body>
+               </Card>
+            </Col>
+            </Row>
+            <DeleteConfirmation showModal={displayConfirmationModal} confirmModal={handleDelete} hideModal={hideConfirmationModal} message={deleteMessage}  />
+         </Container> */}
       </div>
    );
 }

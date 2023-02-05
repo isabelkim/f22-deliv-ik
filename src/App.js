@@ -23,8 +23,21 @@ import EntryModal from './components/EntryModal';
 import { mainListItems } from './components/listItems';
 import { db, SignInScreen } from './utils/firebase';
 import { emptyEntry } from './utils/mutations';
+import * as React from 'react';
+import { categories } from './utils/categories';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
+import MenuItem from '@mui/material/MenuItem';
+import Select from '@mui/material/Select';
 
-// MUI styling constants
+
+// Setting options for sorting
+const options = ["Most Recent", "Oldest", "Name", "User"]
+
+
+// Setting categories for filtering
+const filters = categories.map(category => category.name)
+filters.unshift("All", "Favorites")
 
 const drawerWidth = 240;
 
@@ -83,6 +96,10 @@ export default function App() {
   const [isSignedIn, setIsSignedIn] = useState(false); // Local signed-in state.
   const [currentUser, setcurrentUser] = useState(null); // Local user info
 
+  // Set initial values of sort and filter
+  const [option, setOption] = React.useState("Most Recent")
+  const [category, setCategory] = React.useState("All");
+
   // Listen to the Firebase Auth state and set the local state.
   useEffect(() => {
     const unregisterAuthObserver = firebase.auth().onAuthStateChanged(user => {
@@ -124,17 +141,43 @@ export default function App() {
 
   // Main content of homescreen. This is displayed conditionally from user auth status
 
+  console.log(entries.map(entry => entry.id))
+
   function mainContent() {
     if (isSignedIn) {
       return (
         <Grid container spacing={3}>
           <Grid item xs={12}>
-            <Stack direction="row" spacing={3}>
+            <Stack direction="row" spacing={30}>
               <EntryModal entry={emptyEntry} type="add" user={currentUser} />
+              <FormControl style={{minWidth: 100}} sx={{ "margin-top": 20 }}>
+                  <InputLabel id="demo-simple-select-label">Sort</InputLabel>
+                  <Select
+                     labelId="demo-simple-select-label"
+                     id="demo-simple-select"
+                     value={option}
+                     label="Sort By"
+                     onChange={(event) => {setOption(event.target.value)}}
+                  >
+                     {options.map((option) => (<MenuItem value={option}>{option}</MenuItem>))}
+                  </Select>
+               </FormControl>
+              <FormControl style={{minWidth: 100}} sx={{ "margin-top": 20 }}>
+                  <InputLabel id="demo-simple-select-label">Filter</InputLabel>
+                  <Select
+                     labelId="demo-simple-select-label"
+                     id="demo-simple-select"
+                     value={category}
+                     label="Category"
+                     onChange={(event) => {setCategory(event.target.value)}}
+                  >
+                     {filters.map((category) => (<MenuItem value={category}>{category}</MenuItem>))}
+                  </Select>
+               </FormControl>
             </Stack>
           </Grid>
           <Grid item xs={12}>
-            <EntryTable entries={entries} />
+            <EntryTable entries={entries} category={category} option={option} />
           </Grid>
         </Grid>
       )

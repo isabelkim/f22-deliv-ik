@@ -11,7 +11,49 @@ import { getCategory } from '../utils/categories';
 
 // Table component that displays entries on home screen
 
-export default function EntryTable({ entries }) {
+export default function EntryTable({ entries, category, option }) {
+
+   // Function for sorting
+   function sortEntries(entries, option) {
+      if (option === "Most Recent") {
+         return entries.sort((a,b) =>
+            a.datetime > b.datetime ? -1 : 1
+         )
+      }
+      else if (option === "Oldest") {
+         return entries.sort((a,b) =>
+            a.datetime < b.datetime ? -1 : 1
+         )
+      }
+      else if (option === "Name") {
+         return entries.sort((a,b) =>
+            a.name < b.name ? -1 : 1
+         )
+      }
+
+      // User
+      else {
+         return entries.sort((a,b) =>
+            a.user < b.user ? -1 : 1
+         )
+      }
+   }
+
+     // Function for filtering (takes in entry and type)
+   function checkFilter(entries, category) {
+      if (category === "All") {
+         return entries
+      }
+      else if (category === "Favorites") {
+         return entries.filter(entry => entry.favorites)
+      }
+      else {
+         return entries.filter(entry => getCategory(entry.category).name === category)
+      }
+   }
+
+   let filteredArray = sortEntries(checkFilter(entries, category), option)
+
    return (
       <TableContainer component={Paper}>
          <Table sx={{ minWidth: 650 }} aria-label="simple table">
@@ -25,7 +67,7 @@ export default function EntryTable({ entries }) {
                </TableRow>
             </TableHead>
             <TableBody>
-               {entries.map((entry) => (
+               {filteredArray.map((entry) => (
                   <TableRow
                      key={entry.id}
                      sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
